@@ -1,0 +1,6 @@
+{
+  "name": "Kanso — Calm Task Precision",
+  "description": "An intentional, botanical-minimalist personal task workspace designed for calm focus and clutter-free daily execution.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,209 @@
+---
+name: Calm Task Precision
+colors:
+  surface: '#f8faf5'
+  surface-dim: '#d8dbd6'
+  surface-bright: '#f8faf5'
+  surface-container-lowest: '#ffffff'
+  surface-container-low: '#f2f4ef'
+  surface-container: '#ecefea'
+  surface-container-high: '#e7e9e4'
+  surface-container-highest: '#e1e3de'
+  on-surface: '#191c1a'
+  on-surface-variant: '#3f4944'
+  inverse-surface: '#2e312e'
+  inverse-on-surface: '#eff1ec'
+  outline: '#6f7973'
+  outline-variant: '#bec9c2'
+  surface-tint: '#196b50'
+  primary: '#00563e'
+  on-primary: '#ffffff'
+  primary-container: '#1f6f54'
+  on-primary-container: '#a2efcd'
+  inverse-primary: '#8ad6b5'
+  secondary: '#006c4c'
+  on-secondary: '#ffffff'
+  secondary-container: '#8ef3c6'
+  on-secondary-container: '#007150'
+  tertiary: '#3e4f45'
+  on-tertiary: '#ffffff'
+  tertiary-container: '#55675c'
+  on-tertiary-container: '#d1e4d7'
+  error: '#ba1a1a'
+  on-error: '#ffffff'
+  error-container: '#ffdad6'
+  on-error-container: '#93000a'
+  primary-fixed: '#a5f2d0'
+  primary-fixed-dim: '#8ad6b5'
+  on-primary-fixed: '#002116'
+  on-primary-fixed-variant: '#00513b'
+  secondary-fixed: '#91f6c9'
+  secondary-fixed-dim: '#75d9ae'
+  on-secondary-fixed: '#002115'
+  on-secondary-fixed-variant: '#005139'
+  tertiary-fixed: '#d4e7da'
+  tertiary-fixed-dim: '#b8cbbe'
+  on-tertiary-fixed: '#0e1f17'
+  on-tertiary-fixed-variant: '#394b41'
+  background: '#f8faf5'
+  on-background: '#191c1a'
+  surface-variant: '#e1e3de'
+typography:
+  display:
+    fontFamily: Inter
+    fontSize: 32px
+    fontWeight: '600'
+    lineHeight: 40px
+    letterSpacing: -0.02em
+  headline-lg:
+    fontFamily: Inter
+    fontSize: 26px
+    fontWeight: '600'
+    lineHeight: 34px
+    letterSpacing: -0.015em
+  headline-md:
+    fontFamily: Inter
+    fontSize: 20px
+    fontWeight: '600'
+    lineHeight: 28px
+    letterSpacing: -0.01em
+  headline-sm:
+    fontFamily: Inter
+    fontSize: 17px
+    fontWeight: '600'
+    lineHeight: 24px
+    letterSpacing: -0.005em
+  body-lg:
+    fontFamily: Inter
+    fontSize: 16px
+    fontWeight: '400'
+    lineHeight: 24px
+    letterSpacing: 0em
+  body-md:
+    fontFamily: Inter
+    fontSize: 15px
+    fontWeight: '400'
+    lineHeight: 22px
+    letterSpacing: 0em
+  body-sm:
+    fontFamily: Inter
+    fontSize: 13px
+    fontWeight: '400'
+    lineHeight: 18px
+    letterSpacing: 0.01em
+  label-md:
+    fontFamily: Inter
+    fontSize: 14px
+    fontWeight: '500'
+    lineHeight: 20px
+    letterSpacing: 0.01em
+  label-sm:
+    fontFamily: Inter
+    fontSize: 12px
+    fontWeight: '500'
+    lineHeight: 16px
+    letterSpacing: 0.02em
+  caption:
+    fontFamily: Inter
+    fontSize: 11px
+    fontWeight: '400'
+    lineHeight: 14px
+    letterSpacing: 0.03em
+rounded:
+  sm: 0.25rem
+  DEFAULT: 0.5rem
+  md: 0.75rem
+  lg: 1rem
+  xl: 1.5rem
+  full: 9999px
+spacing:
+  gutter: 1rem
+  margin: 1.25rem
+  space-xs: 0.25rem
+  space-sm: 0.5rem
+  space-md: 0.75rem
+  space-lg: 1rem
+  space-xl: 1.5rem
+---
+
+## Brand & Style
+This design system is tailored for an intentional, clutter-free personal productivity tool. It embraces a tranquil, botanical-grounded minimalism designed to reduce cognitive friction, counter executive dysfunction, and evoke a quiet sense of accomplishment.
+
+The aesthetic fuses Japanese-inspired structural minimalism with modern organic UI patterns:
+- **Atmosphere**: Grounded, peaceful, focused, and purposeful.
+- **Visual Identity**: High reliance on generous negative space, gentle organic contrasts, tactile micro-surfaces, and crisp hairline structural divides.
+- **Layout Architecture**: Dedicated mobile portrait view without traditional drawer sidebars or crowded bottom bars. Flow is linear, vertical, and task-first.
+
+## Colors
+The color scheme relies on natural forest tones and stone hues to provide gentle visual rest while maintaining strict WCAG AA/AAA legibility standards.
+
+### Light Mode (Default)
+- **Background (Canvas)**: `#F3F5F0` (Soft off-white / pale moss tint)
+- **Surface / Card**: `#FFFFFF` (Crisp pure white)
+- **Primary Accent**: `#1F6F54` (Deep forest green; for main actions, active states, key icons)
+- **Accent Hover / Active**: `#175440` (Deeper pine)
+- **Text Primary**: `#19211C` (High-contrast pine-charcoal)
+- **Text Secondary / Muted**: `#65776C` (Muted gray-green)
+- **Border / Outline**: `#E1E6DF` (Subtle 1px boundary)
+
+### Dark Mode
+- **Background (Canvas)**: `#121815` (Deep near-black forest)
+- **Surface / Card**: `#1B2420` (Subtle lifted charcoal-pine)
+- **Primary Accent**: `#4FB58C` (Luminous fresh mint accent)
+- **Text Primary**: `#E6EBE7` (Soft luminescent eggshell)
+- **Text Secondary / Muted**: `#7E9689` (Mid-tone sage)
+- **Border / Outline**: `#27342F` (Muted structural border)
+
+## Typography
+Inter delivers clarity and neutral geometric precision. Since this is an introspective mobile utility, sizes are scaled to prioritize vertical rhythm and scannability:
+- Primary headings utilize tighter negative letter tracking to appear crisp and modern.
+- Body tasks are balanced at 15px/16px to prevent accidental eye strain during prolonged checklist reviews.
+- Completed tasks toggle from weight 400 to a muted secondary style with a clean strikethrough line rendered in the secondary text tone.
+
+## Layout & Spacing
+The layout model is purely vertical and mobile-first, targeting viewport constraints between 360px and 430px wide.
+
+- **Canvas Container**: Centered mobile viewport frame with an outer safe padding of `1.25rem` (`20px`).
+- **Vertical Rhythm**: All task cards and list groups follow an `8px` / `12px` stack cadence.
+- **Zero Bottom/Sidebar Chrome**: The canvas omits sticky navigation bars and flyout sidebars. Actions are integrated contextually via floating gesture triggers or header utilities to keep full focus on the day's agenda.
+- **Touch Ergonomics**: All interactive click targets (checkboxes, filters, action triggers) must preserve an unencumbered hit area of at least 44×44px, even when the visible iconography is smaller.
+
+## Elevation & Depth
+Depth in this system avoids heavy shadows, instead utilizing layered card surfaces and razor-sharp 1px hairline borders.
+
+- **Level 0 (Canvas)**: Baseline background (`#F3F5F0` light / `#121815` dark).
+- **Level 1 (Card/List Surface)**: Pure `#FFFFFF` (or `#1B2420` dark) resting on canvas, bound by a 1px border (`#E1E6DF` light / `#27342F` dark). Shadow is ambient and soft: `0 1px 3px rgba(25, 33, 28, 0.04), 0 4px 12px rgba(25, 33, 28, 0.02)`.
+- **Level 2 (Active Modals / Floating Quick-Add / Dropdowns)**: Lifted surface with an ethereal diffusion: `0 8px 24px rgba(25, 33, 28, 0.08), 0 2px 6px rgba(25, 33, 28, 0.04)`. In dark mode, shadow opacities are doubled and tinted to `#000000`.
+
+## Shapes
+The shape language uses balanced rounded curves:
+- **Default Containers & Cards**: Set uniformly to `12px` (matching the user request for soft, modern, tactile cards).
+- **Inputs & Action Pills**: Modulate between `10px` and fully rounded pill variants for status indicators and filter chips.
+- **Borders**: Strictly 1px solid stroke width across all card perimeters, input frames, and chip boundaries.
+
+## Components
+
+### Task Cards
+- **Structure**: White card (`#FFFFFF` in light, `#1B2420` in dark), 12px border radius, 1px border (`#E1E6DF` / `#27342F`).
+- **Internal Padding**: `14px 16px`.
+- **Interaction**: Pressing anywhere outside the checkbox opens the edit view; swiping reveals quick contextual actions (schedule, delete).
+
+### Checkbox
+- **Size**: 20×20px visual footprint centered within a 44×44px touch target.
+- **Corner Radius**: 6px rounded square.
+- **Unchecked State**: 1.5px border in `#65776C` (light) or `#7E9689` (dark) with transparent fill.
+- **Checked State**: Solid `#1F6F54` (light) or `#4FB58C` (dark) fill with a crisp white checkmark icon; triggers subtle strikethrough transition on the sibling task label.
+
+### Filter & Category Chips
+- **Inactive**: Transparent fill, 1px border (`#E1E6DF` / `#27342F`), text in secondary color (`#65776C` / `#7E9689`).
+- **Active**: `#FFFFFF` fill (light mode) or `#1B2420` (dark mode), 1px subtle border, accompanied by a soft ambient shadow (`0 2px 6px rgba(25, 33, 28, 0.05)`). Text switches to primary color (`#19211C` / `#E6EBE7`).
+- **Height**: 34px height with pill radius (`9999px`) and horizontal padding of `14px`.
+
+### Primary Action & Quick-Add Button
+- **Floating New Task Trigger**: 52×52px circular or 12px rounded pill located in the thumb zone; `#1F6F54` background with `#FFFFFF` glyph.
+- **Hover/Pressed**: Darkens seamlessly to `#175440`.
+- **In-line Quick Add Input**: Embedded seamlessly in lists with `#FFFFFF` background, 1px border, 12px radius, and placeholder text set in muted secondary color.
+
+### Form Inputs
+- **Base Input**: `#FFFFFF` (light) or `#1B2420` (dark), 12px radius, 1px border (`#E1E6DF` / `#27342F`).
+- **Active Focus**: 1px border shifts to `#1F6F54` with a subtle focus glow (`0 0 0 3px rgba(31, 111, 84, 0.12)`).
