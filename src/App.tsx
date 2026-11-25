@@ -1,10 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertCircle,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
+  Database,
   Moon,
   Play,
   Plus,
+  RefreshCw,
   Search,
   Sun,
   X,
@@ -29,11 +33,23 @@ import { TaskCard } from './components/TaskCard';
 import { InlineQuickAdd } from './components/InlineQuickAdd';
 import { TaskDetailPanel } from './components/TaskDetailPanel';
 import { QuickAddSheet } from './components/QuickAddSheet';
+import { SupabaseConfigModal } from './components/SupabaseConfigModal';
 import { UpcomingScreen } from './components/UpcomingScreen';
 import { FocusScreen } from './components/FocusScreen';
 import { ArchiveScreen } from './components/ArchiveScreen';
+import { isSupabaseConfigured, supabase } from './lib/supabase';
+import {
+  TaskRow,
+  clearCompletedTasksFromSupabase,
+  createTaskInSupabase,
+  deleteTaskFromSupabase,
+  getTasksFromSupabase,
+  resetWithTestDataInSupabase,
+  taskRowToTask,
+  updateTaskInSupabase,
+} from './services/taskService';
 
-const STORAGE_KEY_TASKS = 'kanso_tasks_v1';
+const STORAGE_KEY_TASKS = 'kanso_tasks_v2';
 const STORAGE_KEY_THEME = 'kanso_theme_v1';
 const STORAGE_KEY_FOCUS_MINUTES = 'kanso_focus_minutes_v1';
 
@@ -86,6 +102,12 @@ export default function App() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+
+  // Supabase connection & sync states
+  const [supabaseConnected, setSupabaseConnected] = useState<boolean>(false);
+  const [supabaseLoading, setSupabaseLoading] = useState<boolean>(false);
+  const [supabaseError, setSupabaseError] = useState<string | null>(null);
 
   const [undoToast, setUndoToast] = useState<{
     message: string;
@@ -94,6 +116,75 @@ export default function App() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const undoTimerRef = useRef<number | null>(null);
+
+  // Fetch tasks from Supabase on mount and set up Realtime subscription
+  const fetchTasksFromRemote = useCallback(async () => {
+    if (!isSupabaseConfigured()) {
+      setSupabaseConnected(false);
+      return;
+    }
+
+    setSupabaseLoading(true);
+    setSupabaseError(null);
+
+    try {
+      const remoteTasks = await getTasksFromSupabase();
+      setSupabaseConnected(true);
+      if (remoteTasks && remoteTasks.length > 0) {
+        setTasks(remoteTasks);
+      } else {
+        // Table is empty in Supabase: seed it with initial tasks
+        const initialTasks = createSeedTasks(todayISO);
+        setTasks(initialTasks);
+        // Persist initial seed to Supabase
+        await Promise.all(initialTasks.map((t) => createTaskInSupabase(t)));
+      }
+    } catch (err: any) {
+      console.warn('Supabase connection or query failed. Falling back to local data.', err);
+      setSupabaseConnected(false);
+      setSupabaseError(err?.message || 'Could not connect to Supabase');
+    } finally {
+      setSupabaseLoading(false);
+    }
+  }, [todayISO]);
+
+  useEffect(() => {
+    fetchTasksFromRemote();
+
+    if (!isSupabaseConfigured()) return;
+
+    // Realtime changes listener for public:tasks
+    const channel = supabase
+      .channel('kanso-tasks-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newTask = taskRowToTask(payload.new as TaskRow);
+            setTasks((prev) => {
+              if (prev.some((t) => t.id === newTask.id)) return prev;
+              return [newTask, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = taskRowToTask(payload.new as TaskRow);
+            setTasks((prev) =>
+              prev.map((t) => (t.id === updated.id ? updated : t))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as { id?: string })?.id;
+            if (deletedId) {
+              setTasks((prev) => prev.filter((t) => t.id !== deletedId));
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchTasksFromRemote]);
 
   // Sync dark mode class on <html>
   useEffect(() => {
@@ -182,10 +273,17 @@ export default function App() {
 
   const handleUndo = () => {
     if (!undoToast) return;
-    setTasks(undoToast.previousTasks);
+    const restoredTasks = undoToast.previousTasks;
+    setTasks(restoredTasks);
     setUndoToast(null);
     if (undoTimerRef.current) {
       window.clearTimeout(undoTimerRef.current);
+    }
+    if (isSupabaseConfigured()) {
+      // Synchronize restored state with Supabase
+      Promise.all(restoredTasks.map((t) => updateTaskInSupabase(t))).catch((err) => {
+        console.warn('Failed to restore tasks in Supabase:', err);
+      });
     }
   };
 
@@ -200,21 +298,36 @@ export default function App() {
   );
 
   const handleToggleComplete = useCallback((id: string) => {
+    let updatedTask: Task | undefined;
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? {
-              ...t,
-              completed: !t.completed,
-              completedAt: !t.completed ? new Date().toISOString() : undefined,
-            }
-          : t
-      )
+      prev.map((t) => {
+        if (t.id === id) {
+          updatedTask = {
+            ...t,
+            completed: !t.completed,
+            completedAt: !t.completed ? new Date().toISOString() : undefined,
+          };
+          return updatedTask;
+        }
+        return t;
+      })
     );
+
+    if (updatedTask && isSupabaseConfigured()) {
+      updateTaskInSupabase(updatedTask).catch((err) => {
+        console.error('Failed to sync completion to Supabase:', err);
+      });
+    }
   }, []);
 
   const handleUpdateTask = useCallback((updated: Task) => {
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+
+    if (isSupabaseConfigured()) {
+      updateTaskInSupabase(updated).catch((err) => {
+        console.error('Failed to update task in Supabase:', err);
+      });
+    }
   }, []);
 
   const handleDeleteTask = useCallback(
@@ -232,12 +345,19 @@ export default function App() {
       if (focusTaskId === id) {
         setFocusTaskId(null);
       }
+
+      if (isSupabaseConfigured()) {
+        deleteTaskFromSupabase(id).catch((err) => {
+          console.error('Failed to delete task from Supabase:', err);
+        });
+      }
     },
     [selectedTaskId, focusTaskId, showUndo]
   );
 
   const handleQuickReschedule = useCallback(
     (id: string) => {
+      let updatedTask: Task | undefined;
       setTasks((prev) => {
         const target = prev.find((t) => t.id === id);
         if (!target) return prev;
@@ -246,8 +366,15 @@ export default function App() {
             ? addDaysISO(todayISO, 1)
             : addDaysISO(target.date, 1);
         showUndo(`Moved "${target.title}" to next day`, prev);
-        return prev.map((t) => (t.id === id ? { ...t, date: nextDate } : t));
+        updatedTask = { ...target, date: nextDate };
+        return prev.map((t) => (t.id === id ? updatedTask! : t));
       });
+
+      if (updatedTask && isSupabaseConfigured()) {
+        updateTaskInSupabase(updatedTask).catch((err) => {
+          console.error('Failed to reschedule task in Supabase:', err);
+        });
+      }
     },
     [todayISO, showUndo]
   );
@@ -271,11 +398,17 @@ export default function App() {
         durationMinutes: payload.durationMinutes,
         priority: 'Calm',
         subtasks: [],
-        createdAt: todayISO,
+        createdAt: new Date().toISOString(),
       };
       setTasks((prev) => [newTask, ...prev]);
+
+      if (isSupabaseConfigured()) {
+        createTaskInSupabase(newTask).catch((err) => {
+          console.error('Failed to create inline task in Supabase:', err);
+        });
+      }
     },
-    [todayISO]
+    []
   );
 
   const handleCreateFromSheet = useCallback(
@@ -301,11 +434,17 @@ export default function App() {
         durationMinutes: payload.durationMinutes,
         priority: payload.priority,
         subtasks: [],
-        createdAt: todayISO,
+        createdAt: new Date().toISOString(),
       };
       setTasks((prev) => [newTask, ...prev]);
       if (payload.date > todayISO && activeScreen === 'today') {
         setActiveScreen('upcoming');
+      }
+
+      if (isSupabaseConfigured()) {
+        createTaskInSupabase(newTask).catch((err) => {
+          console.error('Failed to create task from sheet in Supabase:', err);
+        });
       }
     },
     [todayISO, activeScreen]
@@ -322,7 +461,27 @@ export default function App() {
       showUndo('Cleared completed log', prev);
       return prev.filter((t) => !t.completed);
     });
+
+    if (isSupabaseConfigured()) {
+      clearCompletedTasksFromSupabase().catch((err) => {
+        console.error('Failed to clear completed tasks in Supabase:', err);
+      });
+    }
   }, [showUndo]);
+
+  const handleResetTestData = useCallback(async () => {
+    const freshTestData = createSeedTasks(todayISO);
+    setTasks(freshTestData);
+    showUndo('Reset to test data', freshTestData);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await resetWithTestDataInSupabase(freshTestData);
+      } catch (err) {
+        console.error('Failed to reset test data in Supabase:', err);
+      }
+    }
+  }, [todayISO, showUndo]);
 
   // Today's filtered tasks
   const todayTasksAll = useMemo(
@@ -480,6 +639,40 @@ export default function App() {
               ) : (
                 <Sun className="w-[18px] h-[18px]" />
               )}
+            </button>
+
+            {/* Supabase Status Pill */}
+            <button
+              type="button"
+              onClick={() => setConfigModalOpen(true)}
+              aria-label="Supabase status and settings"
+              className={`h-9 px-2.5 sm:px-3 rounded-[10px] border text-[12px] sm:text-[13px] font-medium flex items-center gap-1.5 transition-colors ${
+                supabaseConnected
+                  ? 'border-[#1F6F54]/30 dark:border-[#4FB58C]/30 bg-[#1F6F54]/10 dark:bg-[#4FB58C]/10 text-[#1F6F54] dark:text-[#4FB58C]'
+                  : isSupabaseConfigured()
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                  : 'border-[#E1E6DF] dark:border-[#27342F] text-[#65776C] dark:text-[#7E9689] hover:text-[#19211C] dark:hover:text-[#E6EBE7]'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">
+                {supabaseLoading
+                  ? 'Connecting...'
+                  : supabaseConnected
+                  ? 'Supabase'
+                  : isSupabaseConfigured()
+                  ? 'Supabase Error'
+                  : 'Supabase'}
+              </span>
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${
+                  supabaseConnected
+                    ? 'bg-[#1F6F54] dark:bg-[#4FB58C]'
+                    : isSupabaseConfigured()
+                    ? 'bg-amber-500 animate-pulse'
+                    : 'bg-zinc-400'
+                }`}
+              />
             </button>
 
             <button
@@ -910,6 +1103,17 @@ export default function App() {
         todayISO={todayISO}
         onClose={() => setQuickAddOpen(false)}
         onCreate={handleCreateFromSheet}
+      />
+
+      {/* Supabase Connection Setup & Info Modal */}
+      <SupabaseConfigModal
+        isOpen={configModalOpen}
+        onClose={() => setConfigModalOpen(false)}
+        isConnected={supabaseConnected}
+        isLoading={supabaseLoading}
+        error={supabaseError}
+        onTestConnection={fetchTasksFromRemote}
+        onResetTestData={handleResetTestData}
       />
 
       {/* Subtle Undo Bar */}
